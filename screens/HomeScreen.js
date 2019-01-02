@@ -23,27 +23,49 @@ export default class HomeScreen extends React.Component {
   constructor(props) {
       super(props)
       this.state={
-          threatLevel: 6,
+          threatLevel: 3,
           dice1: 0,
-          dice2: 0
+          dice2: 0,
+          pursuitDeck: [-1, -1, -1, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
       }
   }
 
-  threatChange(n) {
-      if(n=='up') {
-        this.setState({threatLevel: this.state.threatLevel + 1 })
-      }
-      if(n=='down') {
-          this.setState({threatLevel: this.state.threatLevel - 1})
-      }
+// resets the pursuit deck
+resetPursuitDeck() {
+    this.state.pursuitDeck = [-1, -1, -1, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3];
+}
+
+// handles rolling dice, dealing with pursuit deck
+doDiceRoll() {
+    this.setState({dice1: Math.floor(Math.random() * 6) + 1})
+    this.setState({dice2: Math.floor(Math.random() * 6) + 1}, this.checkIfThreatExceeded)
+
+    // calculate random element in pursuit deck
+    var pursuitElem = Math.floor(Math.random()*this.state.pursuitDeck.length);
+    
+    // retrieve random element from pursuit deck
+    var pursuitValue = this.state.pursuitDeck[pursuitElem];
+
+    // remove random element from pursuit deck
+    this.state.pursuitDeck.splice(pursuitElem, 1);
+
+    // if pursuit deck depleted, refill
+    if(this.state.pursuitDeck.length == 0) {
+        this.resetPursuitDeck();
+    }
+
+    this.state.threatLevel += pursuitValue;
+
+    // debug
+    console.log("Pursuit value is " + pursuitValue);
+    console.log("PursuitDeck is " + this.state.pursuitDeck);
+
+
  }
 
- doDiceRoll() {
-     this.setState({dice1: Math.floor(Math.random() * 6) + 1})
-     this.setState({dice2: Math.floor(Math.random() * 6) + 1}, this.checkIfThreatExceeded)
- }
 
- checkIfThreatExceeded() {
+
+checkIfThreatExceeded() {
     if((this.state.dice1 + this.state.dice2) >= this.state.threatLevel ) {
         this.popupThreatOK.show();
     }
@@ -102,19 +124,9 @@ export default class HomeScreen extends React.Component {
 
             <View style={styles.threatValueDisplay}>
 
-            <TouchableOpacity style={styles.threatChangeButton} onPress={()=> this.threatChange('down')}>
-                    <Icon name='squared-minus' type='entypo' size={80}/>
-            </TouchableOpacity>
-
-
                 <Text style={{fontSize: 70}}>
                     {this.state.threatLevel}
                 </Text>
-
-                <TouchableOpacity style={styles.threatChangeButton} onPress={()=> this.threatChange('up')}>
-                        <Icon name='squared-plus' type='entypo' size={80}/>
-                </TouchableOpacity>
-
 
             </View>
 
