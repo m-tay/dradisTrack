@@ -20,19 +20,26 @@ export default class HomeScreen extends React.Component {
     header: null,
   };
 
-  constructor(props) {
-      super(props)
-      this.state={
-          threatLevel: 3,
-          dice1: 0,
-          dice2: 0,
-          pursuitDeck: [-1, -1, -1, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3]
-      }
-  }
+constructor(props) {
+    super(props)
+    this.state={
+        threatLevel: 3,
+        triggeringThreatLevel: 0,
+        dice1: 0,
+        dice2: 0,
+        pursuitDeck: [-1, -1, -1, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3],
+        pursuitValue: 0
+    }
+}
 
 // resets the pursuit deck
 resetPursuitDeck() {
     this.state.pursuitDeck = [-1, -1, -1, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3];
+}
+
+resetEntireState() {
+    this.resetPursuitDeck();
+    this.state.threatLevel = 3;
 }
 
 // handles rolling dice, dealing with pursuit deck
@@ -44,7 +51,7 @@ doDiceRoll() {
     var pursuitElem = Math.floor(Math.random()*this.state.pursuitDeck.length);
     
     // retrieve random element from pursuit deck
-    var pursuitValue = this.state.pursuitDeck[pursuitElem];
+    this.state.pursuitValue = this.state.pursuitDeck[pursuitElem];
 
     // remove random element from pursuit deck
     this.state.pursuitDeck.splice(pursuitElem, 1);
@@ -54,23 +61,25 @@ doDiceRoll() {
         this.resetPursuitDeck();
     }
 
-    this.state.threatLevel += pursuitValue;
+    // add pursuit value on to the threat level
+    this.state.threatLevel += this.state.pursuitValue;
 
     // debug
-    console.log("Pursuit value is " + pursuitValue);
+    console.log("Pursuit value is " + this.state.pursuitValue);
     console.log("PursuitDeck is " + this.state.pursuitDeck);
+}
 
 
- }
-
-
-
+// checks for/handles threat exceed events
 checkIfThreatExceeded() {
     if((this.state.dice1 + this.state.dice2) >= this.state.threatLevel ) {
         this.popupThreatOK.show();
     }
     else {
+        this.state.triggeringThreatLevel = this.state.threatLevel;
         this.popupThreatExceed.show();
+        this.resetEntireState(); // threat to 3, refill pursuit deck
+        this.forceUpdate();      // ensures threat is re-rendered 
     }
 }
 
@@ -86,11 +95,13 @@ checkIfThreatExceeded() {
              </View>
              <View style={styles.popupBodyNotOK}>
                 <Text>
-                The threat level was {this.state.threatLevel} and you rolled a {this.state.dice1 + this.state.dice2}
+                The threat level was {this.state.triggeringThreatLevel} and you rolled a {this.state.dice1 + this.state.dice2}
                 {"\n"}{"\n"}
                 You have been discovered. 
                 {"\n"}{"\n"}
                 Draw a Cylon attack card.
+                {"\n"}{"\n"}
+                Pursuit deck gives you {this.state.pursuitValue}
                 </Text>
              </View>
       </PopupDialog>
@@ -106,6 +117,8 @@ checkIfThreatExceeded() {
                 The threat level was {this.state.threatLevel} and you rolled a {this.state.dice1 + this.state.dice2}
                 {"\n"}{"\n"}
                 Phew! No Cylons this time...
+                {"\n"}{"\n"}
+                Pursuit deck gives you {this.state.pursuitValue}
                 </Text>
              </View>
       </PopupDialog>
