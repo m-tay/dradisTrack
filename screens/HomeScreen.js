@@ -13,7 +13,7 @@ import {
 import { WebBrowser } from 'expo';
 import { MonoText } from '../components/StyledText';
 import { Icon } from 'react-native-elements';
-import PopupDialog from 'react-native-popup-dialog';
+import Dialog, { DialogContent, ScaleAnimation} from 'react-native-popup-dialog';
 
 export default class HomeScreen extends React.Component {
   static navigationOptions = {
@@ -42,11 +42,16 @@ resetEntireState() {
     this.state.threatLevel = 3;
 }
 
-// handles rolling dice, dealing with pursuit deck
+// handles rolling dice
 doDiceRoll() {
     this.setState({dice1: Math.floor(Math.random() * 6) + 1})
-    this.setState({dice2: Math.floor(Math.random() * 6) + 1}, this.checkIfThreatExceeded)
 
+    // callback on second dice roll checks for threat exceed events
+    this.setState({dice2: Math.floor(Math.random() * 6) + 1}, this.checkIfThreatExceeded)
+}
+
+// handles the pursuit draw and logic and display
+doPursuit() {
     // calculate random element in pursuit deck
     var pursuitElem = Math.floor(Math.random()*this.state.pursuitDeck.length);
     
@@ -61,6 +66,11 @@ doDiceRoll() {
         this.resetPursuitDeck();
     }
 
+    // popup pursuit dialog
+    this.popupPursuit.show();
+
+    this.forceUpdate();      // ensures threat is re-rendered 
+
     // add pursuit value on to the threat level
     this.state.threatLevel += this.state.pursuitValue;
 
@@ -68,7 +78,6 @@ doDiceRoll() {
     console.log("Pursuit value is " + this.state.pursuitValue);
     console.log("PursuitDeck is " + this.state.pursuitDeck);
 }
-
 
 // checks for/handles threat exceed events
 checkIfThreatExceeded() {
@@ -87,7 +96,7 @@ checkIfThreatExceeded() {
     return (
       <View style={styles.container}>
 
-      <PopupDialog ref={(popupThreatExceed) => {this.popupThreatExceed = popupThreatExceed; }}>
+      <Dialog ref={(popupThreatExceed) => {this.popupThreatExceed = popupThreatExceed; }}>
             <View style={styles.popupTitleNotOK}>
                 <Text style={{fontSize: 40}}>
                     DRADIS CONTACT
@@ -100,13 +109,31 @@ checkIfThreatExceeded() {
                 You have been discovered. 
                 {"\n"}{"\n"}
                 Draw a Cylon attack card.
+                </Text>
+             </View>
+      </Dialog>
+
+      <Dialog ref={(popupPursuit) => {this.popupPursuit = popupPursuit;}}>
+            <View style={styles.popupTitlePursuit}>
+                <Text style={{fontSize: 40}}>
+                    CYLON PURSUIT
+                </Text>
+             </View>
+             <View style={styles.popupBodyPursuit}>
+                <Text>
+                The Cylons close in...
                 {"\n"}{"\n"}
                 Pursuit deck gives you {this.state.pursuitValue}
                 </Text>
              </View>
-      </PopupDialog>
+      </Dialog>
 
-      <PopupDialog ref={(popupThreatOK) => {this.popupThreatOK = popupThreatOK; }}>
+    <Dialog ref={(popupThreatOK) => {this.popupThreatOK = popupThreatOK;}} 
+                 onDismissed={() => this.doPursuit()}
+                 dialogAnimation={new ScaleAnimation({
+                    slideFrom: 'bottom',
+                  })}
+                 >
             <View style={styles.popupTitleOK}>
                 <Text style={{fontSize: 40}}>
                     DRADIS CLEAR
@@ -117,11 +144,11 @@ checkIfThreatExceeded() {
                 The threat level was {this.state.threatLevel} and you rolled a {this.state.dice1 + this.state.dice2}
                 {"\n"}{"\n"}
                 Phew! No Cylons this time...
-                {"\n"}{"\n"}
-                Pursuit deck gives you {this.state.pursuitValue}
                 </Text>
              </View>
-      </PopupDialog>
+      </Dialog>
+
+
 
 
         <View style={styles.rowTitle}>
@@ -239,6 +266,16 @@ popupTitleOK: {
     backgroundColor: 'mediumseagreen'
 },
 popupBodyOK: {
+    flex: 4,
+    backgroundColor: 'mediumseagreen'
+},
+popupTitlePursuit: {
+    flex:1,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    backgroundColor: 'mediumseagreen'
+},
+popupBodyPursuit: {
     flex: 4,
     backgroundColor: 'mediumseagreen'
 }
